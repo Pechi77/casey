@@ -1,12 +1,21 @@
 from string import ascii_uppercase
 from urllib.parse import urljoin
-
+from scrapy.utils.project import get_project_settings
 import scrapy
-
+from case_research.pipelines import MySQLExporter
 
 INITIAL_URL = "https://casesearch.courts.state.md.us/casesearch/"
 SEARCH_PAGE_URL = "https://casesearch.courts.state.md.us/casesearch/processDisclaimer.jis"
 SEARCH_POST_URL = "https://casesearch.courts.state.md.us/casesearch/inquirySearch.jis"
+
+settings = get_project_settings()
+database = MySQLExporter(
+    db=settings.get("MYSQL_DB"),
+    username=settings.get("MYSQL_USERNAME"),
+    password=settings.get("MYSQL_PASSWORD"),
+    host=settings.get("MYSQL_HOST"),
+    port=settings.get("MYSQL_PORT")
+)
 
 
 # Helper exception
@@ -219,6 +228,11 @@ class CaseSpider(scrapy.Spider):
         # process cases
         case_links = response.css("tfoot+tbody td a::attr(href)").getall()
         case_links = [urljoin(response.url, link) for link in case_links]
+        start_length = len(case_links)
+        case_links = [case_link for case_link in case_links if not database.check_record_exists(case_link)]
+        end_length = len(case_links)
+        if start_length != end_length:
+            print(f"SKIPPED {start_length - end_length} cases")
 
         for link in case_links:
             yield scrapy.Request(

@@ -71,6 +71,17 @@ class MySQLExporter(BaseItemExporter):
         self._insert_item(session, case_info_item)
         session.close()
 
+    def check_record_exists(self, link):
+        """
+        Check if a record is already scraped by providing
+        case link
+        """
+        self.session = self.session_maker()
+        record = self.session.query(CaseInfo).filter_by(link=link).first()
+        self.session.close()
+        if record:
+            return True
+        return False
 
 class MySQLPipeline:
     def __init__(self, mysql_db, username, password, host, port):
