@@ -16,7 +16,7 @@ class LettersExhausted(BaseException):
 
 class CaseSpider(scrapy.Spider):
     first: str = None  # First Name Letter
-    last: str = "O"  # Last Name Letter
+    last: str = None  # Last Name Letter
 
     def parse(self, response, **kwargs):
         pass
@@ -74,7 +74,11 @@ class CaseSpider(scrapy.Spider):
             if idx >= len(ascii_uppercase):
                 raise LettersExhausted
             else:
-                self.last = ascii_uppercase[idx + 1]
+                try:
+                    self.last = ascii_uppercase[idx + 1]
+                except IndexError:
+                    raise LettersExhausted
+
         self.logger.debug(f"Last Name set to: {self.last}%")
 
 
@@ -189,15 +193,15 @@ class CaseSpider(scrapy.Spider):
             # * select district court with "D"
             "courtSystem": "B",
             "countyName": "",
-            "filingStart": "7/1/2022",
-            "filingEnd": "7/5/2022",
+            "filingStart": "7/13/2022",
+            "filingEnd": "7/13/2022",
             "filingDate": "",
             "company": "N",
             "courttype": "N",
             "searchtype": search_key,
             "searchTrialPersonAction": "Search",
         }
-        breakpoint()
+        
         yield scrapy.FormRequest(
             url=SEARCH_POST_URL,
             method="POST",
